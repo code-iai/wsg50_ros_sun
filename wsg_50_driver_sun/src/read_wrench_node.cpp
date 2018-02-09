@@ -86,9 +86,9 @@ bool removeBias(std_srvs::Empty::Request  &req,
 
 
 //==========TOPICs CALLBKs=========//
-void readV( const std_msgs::Float64MultiArray::ConstPtr& msg  ){
+void readV( const wsg_50_common_sun::Tactile::ConstPtr& msg  ){
 	for(int i = 0; i<NUM_V; i++){
-		voltages[i] = msg->data[i];
+		voltages[i] = msg->voltages.data[i];
 	}
     voltageMessageArrived = true;
     voltages_rect = voltages - bias;
@@ -100,16 +100,27 @@ void readV( const std_msgs::Float64MultiArray::ConstPtr& msg  ){
         wrench = myANN->compute( voltages_rect );
 
     //Fill ROS msgs
-    msgWrench.force.x = wrench[0];
-	msgWrench.force.y = wrench[1];
-	msgWrench.force.z = wrench[2];
+    msgWrench.header.stamp = msg->header.stamp;
+    msgWrench.header.frame_id = msg->header.frame_id;
+    msgWrench.wrench.force.x = wrench[0];
+	msgWrench.wrench.force.y = wrench[1];
+	msgWrench.wrench.force.z = wrench[2];
 
-	msgWrench.torque.x = wrench[3];
-	msgWrench.torque.y = wrench[4];
-	msgWrench.torque.z = wrench[5];
+	msgWrench.wrench.torque.x = wrench[3];
+	msgWrench.wrench.torque.y = wrench[4];
+	msgWrench.wrench.torque.z = wrench[5];
+
+    msgVoltageRect.voltages.data.resize(25);
+	msgVoltageRect.header.stamp = msg->header.stamp;
+    msgVoltageRect.header.frame_id = msg->header.frame_id;
+	msgVoltageRect.voltages.layout.dim.resize(1);
+    msgVoltageRect.voltages.layout.dim[0].label = msg->voltages.layout.dim[0].label;
+    msgVoltageRect.voltages.layout.dim[0].size = msg->voltages.layout.dim[0].size;
+    msgVoltageRect.voltages.layout.dim[0].stride = msg->voltages.layout.dim[0].stride;
+    msgVoltageRect.voltages.layout.data_offset = msg->voltages.layout.data_offset;
 
     for(int i=0; i<NUM_V ; i++)
-        msgVoltageRect.data[i] = voltages_rect[i];
+        msgVoltageRect.voltages.data[i] = voltages_rect[i];
 
     //Publish
     pubWrench.publish( msgWrench );
@@ -167,14 +178,14 @@ int main(int argc, char const *argv[]){
     /*************************************************/
 
     /******INIT ROS MSGS**********/
-	msgVoltageRect.data.resize(NUM_V);
+	msgVoltageRect.voltages.data.resize(NUM_V);
 	/********************/
 
     /*******INIT ROS PUB**********/
     //Force pub
-	pubWrench = n->advertise<geometry_msgs::Wrench>( name_space + "/wrench",1);
+	pubWrench = n->advertise<geometry_msgs::WrenchStamped>( name_space + "/wrench",1);
 	//Voltage_rect pub
-	pubVoltagesRect = n->advertise<std_msgs::Float64MultiArray>( name_space + "/tactile_voltage/rect",1);
+	pubVoltagesRect = n->advertise<wsg_50_common_sun::Tactile>( name_space + "/tactile_voltage/rect",1);
     /***************************/
 
     /*******INIT MODEL**********/

@@ -21,7 +21,7 @@
 #include <signal.h>
 
 //#include <geometry_msgs/WrenchStamped.h>
-#include <geometry_msgs/Wrench.h>
+#include <geometry_msgs/WrenchStamped.h>
 #include <std_msgs/Float32.h>
 
 
@@ -31,12 +31,13 @@ ros::Publisher velPub;
 double fz = 0.0;
 double fr = 0.0;
 float vel_cmd = 0.0;
+float control_gain = 1.0;
 std_msgs::Float32 velMsg;
-void readForces(const geometry_msgs::Wrench::ConstPtr& forceMsg)
+void readForces(const geometry_msgs::WrenchStamped::ConstPtr& forceMsg)
 {
-	fz = forceMsg->force.z;
+	fz = forceMsg->wrench.force.z;
 
-	vel_cmd = -1.0*(fr-fabs(fz));
+	vel_cmd = -control_gain*(fr-fabs(fz));
 
 	velMsg.data = vel_cmd;
 
@@ -70,6 +71,11 @@ int main(int argc, char *argv[])
 	ros::Subscriber force_sub = nh->subscribe("/wsg_50_driver_sun/finger0/wrench", 1, readForces);
 	ros::Subscriber force_command_sub = nh->subscribe("/wsg_50_driver_sun/commandForce", 1, readCommand);
 	velPub = nh->advertise<std_msgs::Float32>( "/wsg_50_driver_sun/goal_speed",1);
+
+    nh->param("controlGain" , control_gain, (float)1.0 );
+
+    control_gain = fabs(control_gain);
+
     signal(SIGINT, intHandler);
     ros::spin();
 

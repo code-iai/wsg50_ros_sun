@@ -271,6 +271,8 @@ void timer_cb(const ros::TimerEvent& ev)
 	float acc = 0.0;
 	info.speed = 0.0;
 
+	ros::Time myTime = ros::Time::now(); //just for init
+
     if (g_mode_polling) {
 		//printf("MODE_POLLING\n");
         const char * state = systemState();
@@ -292,10 +294,10 @@ void timer_cb(const ros::TimerEvent& ev)
 		} else if (!isnan(g_goal_speed)) {
 			//printf("NOT NAN GOAL SPEED\n");
 			ROS_INFO("Velocity command: speed=%5.1f", g_goal_speed);
-            res = script_measure_move(2, 0, g_goal_speed, info);
+            		res = script_measure_move(2, 0, g_goal_speed, info);
 		} else{
-			//printf("else01\n");
-            res = script_measure_move(0, 0, 0, info);
+			myTime = ros::Time::now(); //last point in the code where i can call ros:Time:now();
+            		res = script_measure_move(0, 0, 0, info);
 			//printf("else02\n");
 		}
 		if (!isnan(g_goal_position))
@@ -333,17 +335,17 @@ void timer_cb(const ros::TimerEvent& ev)
 
 	// ==== Joint state msg ====
 	sensor_msgs::JointState joint_states;
-	joint_states.header.stamp = ros::Time::now();;
+	joint_states.header.stamp = myTime; //ros::Time::now();;
 	joint_states.header.frame_id = "wsg_50_gripper_base_link";
-		joint_states.name.push_back("wsg_50_gripper_base_joint_gripper_left");
+	joint_states.name.push_back("wsg_50_gripper_base_joint_gripper_left");
 	joint_states.name.push_back("wsg_50_gripper_base_joint_gripper_right");
-		joint_states.position.resize(2);
+	joint_states.position.resize(2);
 
 	joint_states.position[0] = -info.position/2000.0;
 	joint_states.position[1] = info.position/2000.0;
 	joint_states.velocity.resize(2);		
-    joint_states.velocity[0] = info.speed/1000.0;
-    joint_states.velocity[1] = info.speed/1000.0;
+    	joint_states.velocity[0] = info.speed/1000.0;
+    	joint_states.velocity[1] = info.speed/1000.0;
 	joint_states.effort.resize(2);
 	joint_states.effort[0] = info.f_motor;
 	joint_states.effort[1] = info.f_motor;
@@ -353,15 +355,15 @@ void timer_cb(const ros::TimerEvent& ev)
 	// printf("Timer, last duration: %6.1f\n", ev.profile.last_duration.toSec() * 1000.0);
 
 	// ==== Tactile msg ====
-        wsg_50_common_sun::Tactile finger_voltages;
+    	wsg_50_common_sun::Tactile finger_voltages;
 	finger_voltages.voltages.data.resize(25);
-	finger_voltages.header.stamp = ros::Time::now(); //Please change to a time saved as soon as we got data
-        finger_voltages.header.frame_id = "fingertip0";  //Please change to a parameter
+	finger_voltages.header.stamp = myTime; //ros::Time::now(); //Please change to a time saved as soon as we got data
+    	finger_voltages.header.frame_id = "fingertip0";  //Please change to a parameter
 	finger_voltages.voltages.layout.dim.resize(1);
-        finger_voltages.voltages.layout.dim[0].label="voltage";
-        finger_voltages.voltages.layout.dim[0].size=25;
-        finger_voltages.voltages.layout.dim[0].stride=1;
-        finger_voltages.voltages.layout.data_offset=0;
+    	finger_voltages.voltages.layout.dim[0].label="voltage";
+    	finger_voltages.voltages.layout.dim[0].size=25;
+    	finger_voltages.voltages.layout.dim[0].stride=1;
+    	finger_voltages.voltages.layout.data_offset=0;
 
 
         
